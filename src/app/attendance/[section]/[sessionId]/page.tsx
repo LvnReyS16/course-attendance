@@ -30,6 +30,7 @@ interface SessionData {
   };
 }
 
+
 export default function SectionAttendancePage() {
   const params = useParams();
   const router = useRouter();
@@ -42,16 +43,16 @@ export default function SectionAttendancePage() {
 
   useEffect(() => {
     async function verifySessionAndFetchSection() {
-      // Modified query to include course information
       const { data: sessionData, error: sessionError } = await supabase
         .from('attendance_sessions')
         .select(`
           id,
           section_id,
+          expires_at,
+          status,
           section:sections (
             id,
             name,
-            course_id,
             course:courses!inner (
               id,
               code,
@@ -68,6 +69,23 @@ export default function SectionAttendancePage() {
         return;
       }
 
+      const isExpired = new Date(sessionData.expires_at) < new Date();
+      if (isExpired && sessionData.status === 'active') {
+        await supabase
+          .from('attendance_sessions')
+          .update({ status: 'expired' })
+          .eq('id', sessionId);
+        setError('This attendance session has expired');
+        setLoading(false);
+        return;
+      }
+
+      if (sessionData.status === 'expired') {
+        setError('This attendance session has expired');
+        setLoading(false);
+        return;
+      }
+
       const typedSessionData = sessionData as unknown as SessionData;
       if (typedSessionData.section.name !== section) {
         setError('Session-section mismatch');
@@ -75,7 +93,6 @@ export default function SectionAttendancePage() {
         return;
       }
 
-      // Set section data directly from the session data
       setSectionData({
         id: typedSessionData.section.id,
         name: typedSessionData.section.name,

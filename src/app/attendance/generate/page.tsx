@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { SupabaseClient } from '@supabase/supabase-js';
+import moment from 'moment';
 
 interface Section {
   id: string;
@@ -14,6 +16,24 @@ interface Section {
   };
 }
 
+const checkAndUpdateSessionStatus = async (supabase: SupabaseClient, sessionId: string) => {
+  const { data: session } = await supabase
+    .from('attendance_sessions')
+    .select('expires_at, status')
+    .eq('id', sessionId)
+    .single();
+
+  if (session && new Date(session.expires_at) < new Date() && session.status === 'active') {
+    // Update session status to expired
+    await supabase
+      .from('attendance_sessions')
+      .update({ status: 'expired' })
+      .eq('id', sessionId);
+    return false;
+  }
+  return session?.status === 'active';
+};
+
 export default function GenerateQRPage() {
   const [sections, setSections] = useState<Section[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -22,6 +42,60 @@ export default function GenerateQRPage() {
   const [sessionId, setSessionId] = useState('');
   const [error, setError] = useState('');
   const supabase = createClientComponentClient();
+
+
+  const generateSession = async () => {
+    if (!selectedSection) return;
+    
+    setIsGenerating(true);
+    try {
+      const expiresAt = moment().add(15, 'minutes').toISOString();
+
+      const section = sections.find(s => s.name === selectedSection);
+      
+      const sessionData = {
+        section_id: section?.id,
+        course_id: section?.course_id,
+        date: moment().format('YYYY-MM-DD'),
+        expires_at: expiresAt,
+        status: 'active'
+      };
+
+      const { data, error } = await supabase
+        .from('attendance_sessions')
+        .insert([sessionData])
+        .select()
+        .single();
+
+      if (error) {
+        setError('Failed to create session');
+        console.error('Error creating session:', error);
+        return;
+      }
+      setSessionId(data.id);
+      setError('');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const qrValue = sessionId 
+    ? `${process.env.NEXT_PUBLIC_BASE_URL}/attendance/${selectedSection}/${sessionId}`
+    : '';
+
+  useEffect(() => {
+    if (sessionId) {
+      const interval = setInterval(async () => {
+        const isActive = await checkAndUpdateSessionStatus(supabase, sessionId);
+        if (!isActive) {
+          setSessionId('');
+          setError('Session expired');
+        }
+      }, 30000); // Check every 30 seconds
+
+      return () => clearInterval(interval);
+    }
+  }, [sessionId, supabase]);
 
   useEffect(() => {
     async function fetchSections() {
@@ -52,45 +126,6 @@ export default function GenerateQRPage() {
     fetchSections();
   }, [supabase]);
 
-  const generateSession = async () => {
-    if (!selectedSection) return;
-    
-    setIsGenerating(true);
-    try {
-      const expiresAt = new Date();
-      expiresAt.setHours(expiresAt.getHours() + 1);
-
-      const section = sections.find(s => s.name === selectedSection);
-      
-      const sessionData = {
-        section_id: section?.id,
-        course_id: section?.course_id,
-        date: new Date().toISOString().split('T')[0],
-        expires_at: expiresAt.toISOString(),
-        status: 'active'
-      };
-
-      const { data, error } = await supabase
-        .from('attendance_sessions')
-        .insert([sessionData])
-        .select()
-        .single();
-
-      if (error) {
-        setError('Failed to create session');
-        console.error('Error creating session:', error);
-        return;
-      }
-      setSessionId(data.id);
-      setError('');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const qrValue = sessionId 
-    ? `${process.env.NEXT_PUBLIC_BASE_URL}/attendance/${selectedSection}/${sessionId}`
-    : '';
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">

@@ -1,5 +1,18 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+
+// Custom debounce function
+function debounce<T extends (...args: Parameters<T>) => Promise<void> | void>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout;
+
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+}
 
 interface Student {
   id: string;
@@ -26,40 +39,56 @@ export default function StudentSearch({ sectionId, courseId, onSelectStudent }: 
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState<Student[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
   const supabase = createClientComponentClient();
 
-  const handleSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Create a persistent debounced search function using useRef
+  const debouncedSearchRef = useRef(
+    debounce(async (value: string) => {
+      if (value.length >= 2) {
+        setIsSearching(true);
+        const { data } = await supabase
+          .from('students')
+          .select(`
+            id,
+            name,
+            section_id,
+            course_id,
+            section:sections (
+              id,
+              name
+            ),
+            course:courses (
+              id,
+              code
+            )
+          `)
+          .eq('section_id', sectionId)
+          .eq('course_id', courseId)
+          .filter('name', 'ilike', `%${value}%`);
+
+        setResults(data as unknown as Student[]);
+        setIsSearching(false);
+      } else {
+        setResults([]);
+      }
+    }, 500)
+  );
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchTerm(value);
     setSelectedStudent(null);
-    
-    if (value.length >= 2) {
-      const { data } = await supabase
-        .from('students')
-        .select(`
-          id,
-          name,
-          section_id,
-          course_id,
-          section:sections (
-            id,
-            name
-          ),
-          course:courses (
-            id,
-            code
-          )
-        `)
-        .eq('section_id', sectionId)
-        .eq('course_id', courseId)
-        .filter('name', 'ilike', `%${value}%`);
-
-      console.log('Search results:', data); // For debugging
-      setResults(data as unknown as Student[]);
-    } else {
-      setResults([]);
-    }
+    debouncedSearchRef.current(value);
   };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    const currentSearch = debouncedSearchRef.current;
+    return () => {
+      clearTimeout(currentSearch as unknown as NodeJS.Timeout);
+    };
+  }, []);
 
   const handleSelectStudent = (student: Student) => {
     setSelectedStudent(student);
@@ -84,6 +113,12 @@ export default function StudentSearch({ sectionId, courseId, onSelectStudent }: 
           className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           autoFocus
         />
+        
+        {isSearching && (
+          <div className="absolute right-3 top-3">
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+          </div>
+        )}
         
         {results.length > 0 && (
           <div className="absolute z-10 w-full mt-1 bg-white rounded-lg shadow-lg border max-h-60 overflow-auto">
