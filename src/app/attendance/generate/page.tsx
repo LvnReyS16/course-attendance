@@ -17,6 +17,7 @@ interface Section {
 export default function GenerateQRPage() {
   const [sections, setSections] = useState<Section[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [selectedSection, setSelectedSection] = useState<string>('');
   const [sessionId, setSessionId] = useState('');
   const [error, setError] = useState('');
@@ -54,32 +55,37 @@ export default function GenerateQRPage() {
   const generateSession = async () => {
     if (!selectedSection) return;
     
-    const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 1);
+    setIsGenerating(true);
+    try {
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 1);
 
-    const section = sections.find(s => s.name === selectedSection);
-    
-    const sessionData = {
-      section_id: section?.id,
-      course_id: section?.course_id,
-      date: new Date().toISOString().split('T')[0],
-      expires_at: expiresAt.toISOString(),
-      status: 'active'
-    };
+      const section = sections.find(s => s.name === selectedSection);
+      
+      const sessionData = {
+        section_id: section?.id,
+        course_id: section?.course_id,
+        date: new Date().toISOString().split('T')[0],
+        expires_at: expiresAt.toISOString(),
+        status: 'active'
+      };
 
-    const { data, error } = await supabase
-      .from('attendance_sessions')
-      .insert([sessionData])
-      .select()
-      .single();
+      const { data, error } = await supabase
+        .from('attendance_sessions')
+        .insert([sessionData])
+        .select()
+        .single();
 
-    if (error) {
-      setError('Failed to create session');
-      console.error('Error creating session:', error);
-      return;
+      if (error) {
+        setError('Failed to create session');
+        console.error('Error creating session:', error);
+        return;
+      }
+      setSessionId(data.id);
+      setError('');
+    } finally {
+      setIsGenerating(false);
     }
-    setSessionId(data.id);
-    setError('');
   };
 
   const qrValue = sessionId 
@@ -125,10 +131,10 @@ export default function GenerateQRPage() {
 
         <button
           onClick={generateSession}
-          disabled={!selectedSection}
+          disabled={!selectedSection || isGenerating}
           className="w-full mb-8 py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
         >
-          Generate New Session
+          {isGenerating ? 'Generating...' : 'Generate New Session'}
         </button>
 
         {sessionId && (

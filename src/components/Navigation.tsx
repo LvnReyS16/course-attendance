@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 export default function Navigation() {
   return (
-    <nav className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 shadow-lg sticky top-0 z-50">
+    <nav className="bg-gradient-to-r from-[#155E95] via-[#6A80B9] to-[#F6C794] shadow-lg sticky top-0 z-50">
       <div className="max-w-7xl px-6 lg:px-8">
         <div className="flex items-center h-[4.5rem]">
           <div className="flex items-center space-x-12">
