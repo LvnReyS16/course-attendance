@@ -79,6 +79,7 @@ export default function GenerateQRPage() {
     }
   };
 
+  
   const qrValue = sessionId 
     ? `${process.env.NEXT_PUBLIC_BASE_URL}/attendance/${selectedSection}/${sessionId}`
     : '';
