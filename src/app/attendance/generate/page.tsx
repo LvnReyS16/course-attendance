@@ -49,7 +49,7 @@ export default function GenerateQRPage() {
     
     setIsGenerating(true);
     try {
-      const expiresAt = moment().add(15, 'minutes').toISOString();
+      const expiresAt = moment().add(3, 'hours').toISOString();
 
       const section = sections.find(s => s.name === selectedSection);
       

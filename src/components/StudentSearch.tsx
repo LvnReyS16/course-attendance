@@ -32,10 +32,11 @@ interface Student {
 interface StudentSearchProps {
   sectionId: string;
   courseId: string;
+  isSubmitting: boolean;
   onSelectStudent: (student: Student) => void;
 }
 
-export default function StudentSearch({ sectionId, courseId, onSelectStudent }: StudentSearchProps) {
+export default function StudentSearch({ sectionId, courseId, isSubmitting, onSelectStudent }: StudentSearchProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState<Student[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
@@ -148,9 +149,17 @@ export default function StudentSearch({ sectionId, courseId, onSelectStudent }: 
           </div>
           <button
             onClick={handleSubmit}
-            className="mt-4 w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            disabled={isSubmitting}
+            className="mt-4 w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
           >
-            Submit Attendance
+            {isSubmitting ? (
+              <div className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                Submitting...
+              </div>
+            ) : (
+              'Submit Attendance'
+            )}
           </button>
         </div>
       )}

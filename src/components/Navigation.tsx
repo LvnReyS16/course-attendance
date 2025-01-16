@@ -12,7 +12,7 @@ export default function Navigation() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession()
       setIsAuthenticated(!!session);
     };
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import StudentSearch from '@/components/StudentSearch';
 import moment from 'moment';
@@ -19,6 +19,7 @@ interface Section {
 interface SessionData {
   id: string;
   section_id: string;
+  created_at: string;
   section: {
     id: string;
     name: string;
@@ -33,13 +34,15 @@ interface SessionData {
 
 export default function SectionAttendancePage() {
   const params = useParams();
-  const router = useRouter();
   const { section, sessionId } = params;
   const [sectionData, setSectionData] = useState<Section | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const supabase = createClientComponentClient();
   const currentDate = moment().format('MMMM D, YYYY - dddd');
+  const [submitted, setSubmitted] = useState(false);
+  const [sessionCreatedAt, setSessionCreatedAt] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     async function verifySessionAndFetchSection() {
@@ -50,6 +53,7 @@ export default function SectionAttendancePage() {
           section_id,
           expires_at,
           status,
+          created_at,
           section:sections (
             id,
             name,
@@ -98,6 +102,7 @@ export default function SectionAttendancePage() {
         name: typedSessionData.section.name,
         course: typedSessionData.section.course
       });
+      setSessionCreatedAt(sessionData.created_at);
       setLoading(false);
     }
 
@@ -121,10 +126,10 @@ export default function SectionAttendancePage() {
           <h2 className="text-2xl font-bold text-red-600 mb-2">Error</h2>
           <p className="text-gray-600 mb-4">{error}</p>
           <button
-            onClick={() => router.push('/attendance/generate')}
+            onClick={() => window.location.href = `/attendance/${section}/${sessionId}`}
             className="text-blue-600 hover:text-blue-800 font-medium"
           >
-            ← Back to QR Generation
+            ← Go Back
           </button>
         </div>
       </div>
@@ -153,33 +158,55 @@ export default function SectionAttendancePage() {
         </p>
         <p className="text-center text-gray-600 mb-6">{currentDate}</p>
         
-        <StudentSearch 
-          sectionId={sectionData?.id}
-          courseId={sectionData?.course?.id}
-          onSelectStudent={async (student) => {
-            try {
-              const response = await fetch('/api/attendance', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  sessionId,
-                  studentId: student.id,
-                  sectionId: sectionData?.id,
-                  courseId: sectionData?.course?.id,
-                  timestamp: new Date().toISOString(),
-                }),
-              });
+        {submitted ? (
+          <div className="text-center text-green-600 font-medium p-4">
+            Attendance successfully submitted!
+          </div>
+        ) : (
+          <StudentSearch 
+            sectionId={sectionData?.id}
+            courseId={sectionData?.course?.id}
+            isSubmitting={isSubmitting}
+            onSelectStudent={async (student) => {
+              try {
+                setIsSubmitting(true);
+                const currentTime = moment();
+                const sessionTime = moment(sessionCreatedAt);
+                const timeDiff = currentTime.diff(sessionTime, 'minutes');
+                
+                const status = timeDiff <= 15 ? 'present' : 'late';
 
-              if (!response.ok) {
-                throw new Error('Failed to submit attendance');
+                const response = await fetch('/api/attendance', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    sessionId,
+                    studentId: student.id,
+                    sectionId: sectionData?.id,
+                    courseId: sectionData?.course?.id,
+                    timestamp: new Date().toISOString(),
+                    status,
+                    verification_method: 'qr'
+                  }),
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                  setSubmitted(true);
+                  setError('');
+                } else {
+                  setError(result.error);
+                }
+              } catch {
+                setError('Something went wrong');
+              } finally {
+                setIsSubmitting(false);
               }
-            } catch (err) {
-              setError(err instanceof Error ? err.message : 'Something went wrong');
-            }
-          }} 
-        />
+            }} 
+          />
+        )}
 
         {error && (
           <div className="mt-4 p-3 text-red-700 bg-red-100 rounded-lg text-center">
