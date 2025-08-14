@@ -10,12 +10,15 @@ export async function middleware(req: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession();
 
-  // Only protect specific attendance routes
+  // Protected routes
   const protectedPaths = ['/attendance/generate', '/attendance/records'];
+  const adminPaths = ['/admin'];
+  
   const isProtectedPath = protectedPaths.some(path => req.nextUrl.pathname.startsWith(path));
+  const isAdminPath = adminPaths.some(path => req.nextUrl.pathname.startsWith(path));
 
   // If there's no session and trying to access a protected route
-  if (!session && isProtectedPath) {
+  if (!session && (isProtectedPath || isAdminPath)) {
     const redirectUrl = new URL('/login', req.url);
     return NextResponse.redirect(redirectUrl);
   }
@@ -24,5 +27,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/attendance/generate', '/attendance/records'],
+  matcher: ['/attendance/generate', '/attendance/records', '/admin/:path*'],
 }; 
