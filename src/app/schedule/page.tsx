@@ -62,7 +62,7 @@ const getDayName = (day: string): string => {
 export default function SchedulePage() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentDate, setCurrentDate] = useState(new Date(2025, 0)); // January 2025
+  const [currentDate, setCurrentDate] = useState(new Date()); // Current month
   const [view, setView] = useState<'calendar' | 'list'>('calendar');
   const supabase = createClientComponentClient();
 
@@ -216,17 +216,19 @@ export default function SchedulePage() {
                 const daySchedules = getSchedulesForDay(day);
                 
                 return (
-                  <div
-                    key={index}
-                    className={`min-h-[150px] bg-white p-2 ${
-                      !isSameMonth(day, currentDate) ? 'bg-gray-50' : ''
-                    } ${isToday(day) ? 'bg-blue-50' : ''}`}
-                  >
-                    <div className={`text-right text-sm ${
-                      !isSameMonth(day, currentDate) ? 'text-gray-400' : 'text-gray-700'
-                    } ${isToday(day) ? 'font-bold' : ''}`}>
-                      {format(day, 'd')}
-                    </div>
+                                     <div
+                     key={index}
+                     className={`min-h-[150px] p-2 ${
+                       !isSameMonth(day, currentDate) ? 'bg-gray-50' : 
+                       isToday(day) ? 'bg-blue-100 border-2 border-blue-500' : 'bg-white'
+                     }`}
+                   >
+                     <div className={`text-right text-sm ${
+                       !isSameMonth(day, currentDate) ? 'text-gray-400' : 'text-gray-700'
+                     } ${isToday(day) ? 'font-bold text-blue-700' : ''}`}>
+                       {format(day, 'd')}
+                       
+                     </div>
                     <div className="mt-1 space-y-1">
                       {daySchedules.map((schedule, scheduleIndex) => (
                         <div

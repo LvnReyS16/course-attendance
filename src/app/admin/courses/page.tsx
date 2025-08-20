@@ -1,98 +1,141 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { Database } from '@/lib/database.types';
+"use client";
 
-export default async function CoursesPage() {
-  const supabase = createServerComponentClient<Database>({ cookies });
+import { useEffect, useState } from "react";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { Database } from "@/lib/database.types";
+import DataTable from "@/components/DataTable";
+import LoadingSpinner from "@/components/LoadingSpinner";
+import { MdAdd, MdSchool } from "react-icons/md";
 
-  const { data: courses, error } = await supabase
-    .from('courses')
-    .select('*')
-    .order('code');
+type Course = Database["public"]["Tables"]["courses"]["Row"];
 
-  if (error) {
-    console.error('Error fetching courses:', error);
-    return <div>Error loading courses</div>;
-  }
+export default function CoursesPage() {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const supabase = createClientComponentClient<Database>();
+
+  useEffect(() => {
+    fetchCourses();
+  }, []);
+
+  const fetchCourses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("courses")
+        .select("*")
+        .order("code");
+
+      if (error) throw error;
+      setCourses(data || []);
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <div>
-      <div className="sm:flex sm:items-center">
-        <div className="sm:flex-auto">
-          <h1 className="text-3xl font-semibold text-gray-900">Courses</h1>
-          <p className="mt-2 text-sm text-gray-700">
-            A list of all courses including their code, title, units, and hours.
-          </p>
-        </div>
-        <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
+    <div className="space-y-6">
+      {/* Header Section */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200/50 p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center space-x-4 mb-4 sm:mb-0">
+            <div className="p-3 rounded-xl bg-green-50 text-green-600 shadow-sm">
+              <MdSchool className="w-7 h-7" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">Courses</h1>
+              <p className="text-slate-600 text-sm">
+                Manage course information and curriculum details
+              </p>
+            </div>
+          </div>
           <button
             type="button"
-            className="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+            className="inline-flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 hover:from-green-600 hover:to-green-700"
           >
-            Add Course
+            <MdAdd className="w-5 h-5" />
+            <span>Add Course</span>
           </button>
         </div>
       </div>
 
-      <div className="mt-8 flow-root">
-        <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-          <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-            <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
-              <table className="min-w-full divide-y divide-gray-300">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
-                      Code
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      Title
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      Units
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      Lecture Hours
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      Lab Hours
-                    </th>
-                    <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
-                      <span className="sr-only">Actions</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 bg-white">
-                  {courses.map((course) => (
-                    <tr key={course.id}>
-                      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                        {course.code}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        {course.title}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        {course.units}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        {course.lecture_hours || 'N/A'}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        {course.lab_hours || 'N/A'}
-                      </td>
-                      <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                        <button className="text-indigo-600 hover:text-indigo-900 mr-4">
-                          Edit
-                        </button>
-                        <button className="text-red-600 hover:text-red-900">
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+      {/* Data Table Section */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200/50 overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-200/50">
+          <h2 className="text-lg font-semibold text-slate-900">
+            Course Records
+          </h2>
+          <p className="text-slate-600 text-sm mt-1">
+            A comprehensive list of all courses with their details and
+            curriculum information
+          </p>
+        </div>
+        <div className="p-6">
+          <DataTable
+            data={courses}
+            columns={[
+              {
+                header: "Code",
+                accessor: "code",
+                sortable: true,
+                filterable: true,
+                getFilterOptions: (data) => [
+                  ...new Set(data.map((course) => course.code)),
+                ],
+              },
+              {
+                header: "Title",
+                accessor: "title",
+                sortable: true,
+                filterable: true,
+                getFilterOptions: (data) => [
+                  ...new Set(data.map((course) => course.title)),
+                ],
+              },
+              {
+                header: "Units",
+                accessor: "units",
+                sortable: true,
+                filterable: true,
+                getFilterOptions: (data) => [
+                  ...new Set(data.map((course) => String(course.units))),
+                ],
+              },
+              {
+                header: "Lecture Hours",
+                accessor: "lecture_hours",
+                sortable: true,
+                filterable: true,
+                getFilterOptions: (data) => [
+                  ...new Set(
+                    data.map((course) => String(course.lecture_hours || "N/A"))
+                  ),
+                ],
+              },
+              {
+                header: "Lab Hours",
+                accessor: "lab_hours",
+                sortable: true,
+                filterable: true,
+                getFilterOptions: (data) => [
+                  ...new Set(
+                    data.map((course) => String(course.lab_hours || "N/A"))
+                  ),
+                ],
+              },
+            ]}
+            searchFields={["code", "title"]}
+            isLoading={isLoading}
+            onEdit={(id) => {
+              // TODO: Implement edit functionality
+              console.log("Edit course:", id);
+            }}
+            onDelete={async (id) => {
+              // TODO: Implement delete functionality
+              console.log("Delete course:", id);
+            }}
+          />
         </div>
       </div>
     </div>

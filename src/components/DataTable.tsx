@@ -1,8 +1,17 @@
-'use client';
+"use client";
 
-import { useState, useEffect, ReactNode } from 'react';
-import { useDebounce } from '@/hooks/useDebounce';
-import LoadingSpinner from './LoadingSpinner';
+import { useState, useEffect, ReactNode } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
+import LoadingSpinner from "./LoadingSpinner";
+import {
+  MdSearch,
+  MdFirstPage,
+  MdLastPage,
+  MdChevronLeft,
+  MdChevronRight,
+  MdKeyboardArrowDown,
+} from "react-icons/md";
+import { FiEdit3, FiTrash2 } from "react-icons/fi";
 
 interface Column<T> {
   header: string;
@@ -155,55 +164,67 @@ export default function DataTable<T extends { id: string }>({
   return (
     <div>
       {/* Table header with search and filters */}
-      <div className="bg-white px-4 py-3 border-b border-gray-200 sm:rounded-t-lg">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-2">
+      <div className="bg-white py-3 border-b border-gray-200 sm:rounded-t-lg">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="flex items-start gap-2">
             {/* Search input */}
             <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <MdSearch className="h-5 w-5 text-slate-400" />
+              </div>
               <input
                 type="text"
                 placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-64 rounded-md border-0 bg-gray-50 py-1.5 pl-3 pr-8 text-gray-900 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                className="w-64 rounded-lg border-0 bg-slate-50 py-2 pl-10 pr-4 text-slate-900 placeholder:text-slate-500 focus:ring-2 focus:ring-inset focus:ring-blue-500 focus:bg-white transition-all duration-200 sm:text-sm sm:leading-6"
               />
-              <div className="absolute inset-y-0 right-0 flex items-center pr-2">
-                <svg className="h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-                </svg>
-              </div>
             </div>
 
             {/* Column filters */}
-            <div className="flex items-center gap-2 flex-wrap">
-              {columns.map(column => {
+            <div className="flex items-center gap-3 flex-wrap">
+              {columns.map((column) => {
                 if (!column.filterable || !column.getFilterOptions) return null;
-                
+
                 const options = column.getFilterOptions(data);
                 if (options.length === 0) return null;
 
-                const currentFilter = filters.find(f => f.field === String(column.accessor))?.value;
-                
+                const currentFilter = filters.find(
+                  (f) => f.field === String(column.accessor)
+                )?.value;
+
                 return (
-                  <div key={String(column.accessor)} className="flex items-center gap-2">
-                    <select
-                      value={currentFilter || ''}
-                      onChange={(e) => {
-                        if (e.target.value === '') {
-                          setFilters(filters.filter(f => f.field !== String(column.accessor)));
-                        } else {
-                          handleFilter(String(column.accessor), e.target.value);
-                        }
-                      }}
-                      className="block w-fit rounded-md border-0 py-1.5 pl-3 pr-10 bg-white text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                    >
-                      <option value="">{column.header}</option>
-                      {options.map(option => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
+                  <div key={String(column.accessor)}>
+                    <div className="relative">
+                      <select
+                        value={currentFilter || ""}
+                        onChange={(e) => {
+                          if (e.target.value === "") {
+                            setFilters(
+                              filters.filter(
+                                (f) => f.field !== String(column.accessor)
+                              )
+                            );
+                          } else {
+                            handleFilter(
+                              String(column.accessor),
+                              e.target.value
+                            );
+                          }
+                        }}
+                        className="appearance-none block w-fit rounded-lg py-2 pl-3 pr-10 bg-slate-50 text-slate-700 border transition-all duration-200 sm:text-sm sm:leading-6 h-10 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="">{column.header}</option>
+                        {options.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <MdKeyboardArrowDown className="h-4 w-4 text-slate-500" />
+                      </div>
+                    </div>
                   </div>
                 );
               })}
@@ -231,7 +252,7 @@ export default function DataTable<T extends { id: string }>({
             <table className="min-w-full divide-y divide-gray-300">
               <thead className="bg-gray-50">
                 <tr>
-                  {columns.map(column => (
+                  {columns.map((column) => (
                     <th
                       key={String(column.accessor)}
                       scope="col"
@@ -242,11 +263,21 @@ export default function DataTable<T extends { id: string }>({
                         {column.sortable && (
                           <button
                             className="ml-2 flex-none rounded text-gray-400 hover:text-gray-500"
-                            onClick={() => handleSort(column.accessor as keyof T)}
+                            onClick={() =>
+                              handleSort(column.accessor as keyof T)
+                            }
                           >
                             <span className="sr-only">Sort by</span>
-                            <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                            <svg
+                              className="h-5 w-5"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                                clipRule="evenodd"
+                              />
                             </svg>
                           </button>
                         )}
@@ -254,62 +285,71 @@ export default function DataTable<T extends { id: string }>({
                     </th>
                   ))}
                   {showActions && (
-                    <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                    <th
+                      scope="col"
+                      className="relative py-3.5 pl-3 pr-4 sm:pr-6"
+                    >
                       <span className="sr-only">Actions</span>
                     </th>
                   )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
-                                  {isLoading ? (
-                    <tr>
-                      <td
-                        colSpan={columns.length + (showActions ? 1 : 0)}
-                        className="px-3 py-4 text-sm text-gray-500 text-center"
-                      >
-                        <LoadingSpinner />
-                      </td>
-                    </tr>
-                  ) : filteredData.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={columns.length + (showActions ? 1 : 0)}
-                        className="px-3 py-4 text-sm text-gray-500 text-center"
-                      >
-                        No results found
-                      </td>
-                    </tr>
-                  ) : (
-                    displayData.map((item) => (
+                {isLoading ? (
+                  <tr>
+                    <td
+                      colSpan={columns.length + (showActions ? 1 : 0)}
+                      className="px-3 py-4 text-sm text-gray-500 text-center"
+                    >
+                      <LoadingSpinner />
+                    </td>
+                  </tr>
+                ) : filteredData.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={columns.length + (showActions ? 1 : 0)}
+                      className="px-3 py-4 text-sm text-gray-500 text-center"
+                    >
+                      No results found
+                    </td>
+                  </tr>
+                ) : (
+                  displayData.map((item) => (
                     <tr key={item.id} className="hover:bg-gray-50">
-                      {columns.map(column => (
+                      {columns.map((column) => (
                         <td
                           key={String(column.accessor)}
                           className="px-3 py-4 text-sm text-gray-500"
                         >
-                          {typeof column.accessor === 'function'
+                          {typeof column.accessor === "function"
                             ? column.accessor(item)
-                            : String(item[column.accessor] || '')}
+                            : String(item[column.accessor] || "")}
                         </td>
                       ))}
                       {showActions && (
                         <td className="relative py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                          {onEdit && (
-                            <button
-                              onClick={() => onEdit(item.id)}
-                              className="text-indigo-600 hover:text-indigo-900 mr-4"
-                            >
-                              Edit
-                            </button>
-                          )}
-                          {onDelete && (
-                            <button
-                              onClick={() => handleDelete(item.id)}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              Delete
-                            </button>
-                          )}
+                          <div className="flex items-center justify-end space-x-2">
+                            {onEdit && (
+                              <button
+                                onClick={() => onEdit(item.id)}
+                                className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 bg-slate-50 rounded-lg hover:bg-slate-100 hover:text-slate-800 transition-all duration-200 border border-slate-200 hover:border-slate-300"
+                                title="Edit"
+                              >
+                                <FiEdit3 className="w-4 h-4 mr-1.5" />
+                                Edit
+                              </button>
+                            )}
+                            {onDelete && (
+                              <button
+                                onClick={() => handleDelete(item.id)}
+                                className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 bg-slate-50 rounded-lg hover:bg-slate-100 hover:text-slate-800 transition-all duration-200 border border-slate-200 hover:border-slate-300"
+                                title="Delete"
+                              >
+                                <FiTrash2 className="w-4 h-4 mr-1.5" />
+                                Delete
+                              </button>
+                            )}
+                          </div>
                         </td>
                       )}
                     </tr>
@@ -322,14 +362,18 @@ export default function DataTable<T extends { id: string }>({
             <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
               <div className="flex flex-1 justify-between sm:hidden">
                 <button
-                  onClick={() => setCurrentPage(page => Math.max(1, page - 1))}
+                  onClick={() =>
+                    setCurrentPage((page) => Math.max(1, page - 1))
+                  }
                   disabled={currentPage === 1}
                   className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Previous
                 </button>
                 <button
-                  onClick={() => setCurrentPage(page => Math.min(totalPages, page + 1))}
+                  onClick={() =>
+                    setCurrentPage((page) => Math.min(totalPages, page + 1))
+                  }
                   disabled={currentPage === totalPages}
                   className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -339,9 +383,12 @@ export default function DataTable<T extends { id: string }>({
               <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm text-gray-700">
-                    Showing <span className="font-medium">{startIndex + 1}</span> to{' '}
-                    <span className="font-medium">{Math.min(endIndex, totalItems)}</span> of{' '}
-                    <span className="font-medium">{totalItems}</span> results
+                    Showing{" "}
+                    <span className="font-medium">{startIndex + 1}</span> to{" "}
+                    <span className="font-medium">
+                      {Math.min(endIndex, totalItems)}
+                    </span>{" "}
+                    of <span className="font-medium">{totalItems}</span> results
                   </p>
                 </div>
                 <div className="flex items-center space-x-4">
@@ -352,9 +399,9 @@ export default function DataTable<T extends { id: string }>({
                       setItemsPerPage(Number(e.target.value));
                       setCurrentPage(1);
                     }}
-                    className="rounded-md border-gray-300 py-1.5 text-sm font-medium text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    className="rounded-md border-slate-300 py-1.5 text-sm font-medium text-slate-700 focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
                   >
-                    {pageSizeOptions.map(size => (
+                    {pageSizeOptions.map((size) => (
                       <option key={size} value={size}>
                         {size} per page
                       </option>
@@ -362,28 +409,29 @@ export default function DataTable<T extends { id: string }>({
                   </select>
 
                   {/* Page navigation */}
-                  <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                  <nav
+                    className="isolate inline-flex -space-x-px rounded-md shadow-sm"
+                    aria-label="Pagination"
+                  >
                     <button
                       onClick={() => setCurrentPage(1)}
                       disabled={currentPage === 1}
-                      className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="relative inline-flex items-center rounded-l-md px-3 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <span className="sr-only">First</span>
-                      <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M15.707 15.707a1 1 0 01-1.414 0L9 10.414V13a1 1 0 11-2 0V7a1 1 0 011-1h6a1 1 0 110 2h-2.586l5.293 5.293a1 1 0 010 1.414z" clipRule="evenodd" />
-                      </svg>
+                      <MdFirstPage className="h-5 w-5" />
                     </button>
                     <button
-                      onClick={() => setCurrentPage(page => Math.max(1, page - 1))}
+                      onClick={() =>
+                        setCurrentPage((page) => Math.max(1, page - 1))
+                      }
                       disabled={currentPage === 1}
-                      className="relative inline-flex items-center px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="relative inline-flex items-center px-3 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <span className="sr-only">Previous</span>
-                      <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
+                      <MdChevronLeft className="h-5 w-5" />
                     </button>
-                    
+
                     {/* Page numbers */}
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                       let pageNum;
@@ -396,15 +444,15 @@ export default function DataTable<T extends { id: string }>({
                       } else {
                         pageNum = currentPage - 2 + i;
                       }
-                      
+
                       return (
                         <button
                           key={i}
                           onClick={() => setCurrentPage(pageNum)}
                           className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
                             currentPage === pageNum
-                              ? 'z-10 bg-indigo-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
-                              : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+                              ? "z-10 bg-gradient-to-r from-blue-500 to-blue-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                              : "text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0"
                           }`}
                         >
                           {pageNum}
@@ -413,24 +461,22 @@ export default function DataTable<T extends { id: string }>({
                     })}
 
                     <button
-                      onClick={() => setCurrentPage(page => Math.min(totalPages, page + 1))}
+                      onClick={() =>
+                        setCurrentPage((page) => Math.min(totalPages, page + 1))
+                      }
                       disabled={currentPage === totalPages}
-                      className="relative inline-flex items-center px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="relative inline-flex items-center px-3 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <span className="sr-only">Next</span>
-                      <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                      </svg>
+                      <MdChevronRight className="h-5 w-5" />
                     </button>
                     <button
                       onClick={() => setCurrentPage(totalPages)}
                       disabled={currentPage === totalPages}
-                      className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="relative inline-flex items-center rounded-r-md px-3 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <span className="sr-only">Last</span>
-                      <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L11 9.586V7a1 1 0 112 0v6a1 1 0 01-1 1H6a1 1 0 110-2h2.586l-5.293-5.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                      </svg>
+                      <MdLastPage className="h-5 w-5" />
                     </button>
                   </nav>
                 </div>
@@ -454,31 +500,40 @@ export default function DataTable<T extends { id: string }>({
               displayData.map((item) => (
                 <div key={item.id} className="p-4 hover:bg-gray-50">
                   <div className="flex flex-col space-y-2">
-                    {columns.map(column => (
-                      <div key={String(column.accessor)} className="flex justify-between">
-                        <div className="text-sm font-medium text-gray-500">{column.header}</div>
+                    {columns.map((column) => (
+                      <div
+                        key={String(column.accessor)}
+                        className="flex justify-between"
+                      >
+                        <div className="text-sm font-medium text-gray-500">
+                          {column.header}
+                        </div>
                         <div className="text-sm text-gray-900">
-                          {typeof column.accessor === 'function'
+                          {typeof column.accessor === "function"
                             ? column.accessor(item)
-                            : String(item[column.accessor] || '')}
+                            : String(item[column.accessor] || "")}
                         </div>
                       </div>
                     ))}
                     {showActions && (
-                      <div className="flex justify-end space-x-3 pt-2 border-t">
+                      <div className="flex justify-end space-x-2 pt-3 border-t border-gray-200">
                         {onEdit && (
                           <button
                             onClick={() => onEdit(item.id)}
-                            className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
+                            className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 bg-slate-50 rounded-lg hover:bg-slate-100 hover:text-slate-800 transition-all duration-200 border border-slate-200 hover:border-slate-300"
+                            title="Edit"
                           >
+                            <FiEdit3 className="w-4 h-4 mr-1.5" />
                             Edit
                           </button>
                         )}
                         {onDelete && (
                           <button
                             onClick={() => handleDelete(item.id)}
-                            className="text-red-600 hover:text-red-900 text-sm font-medium"
+                            className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 bg-slate-50 rounded-lg hover:bg-slate-100 hover:text-slate-800 transition-all duration-200 border border-slate-200 hover:border-slate-300"
+                            title="Delete"
                           >
+                            <FiTrash2 className="w-4 h-4 mr-1.5" />
                             Delete
                           </button>
                         )}

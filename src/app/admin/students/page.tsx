@@ -7,6 +7,7 @@ import Modal from '@/components/Modal';
 import StudentForm from './StudentForm';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import DataTable from '@/components/DataTable';
+import { MdPeople, MdAdd } from 'react-icons/md';
 
 type Student = Database['public']['Tables']['students']['Row'] & {
   sections: { name: string; program: string } | null;
@@ -56,7 +57,7 @@ export default function StudentsPage() {
   const handleDelete = async (studentId: string) => {
     try {
       setError(null);
-      
+
       // First check if student has any attendance records
       const { data: attendanceRecords, error: checkError } = await supabase
         .from('attendance_records')
@@ -115,116 +116,133 @@ export default function StudentsPage() {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <div>
-      <div className="sm:flex sm:items-center">
-        <div className="sm:flex-auto">
-          <h1 className="text-3xl font-semibold text-gray-900">Students</h1>
-          <p className="mt-2 text-sm text-gray-700">
-            A list of all students including their name, email, section, and year level.
-          </p>
-        </div>
-        <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
+    <div className="space-y-6">
+      {/* Header Section */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200/50 p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center space-x-4 mb-4 sm:mb-0">
+            <div className="p-3 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-sm">
+              <MdPeople className="w-7 h-7" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">Students</h1>
+              <p className="text-slate-600 text-sm">
+                Manage student information and enrollment
+              </p>
+            </div>
+          </div>
           <button
             type="button"
             onClick={() => setIsModalOpen(true)}
-            className="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+            className="inline-flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 hover:from-blue-600 hover:to-blue-700"
           >
-            Add Student
+            <MdAdd className="w-5 h-5" />
+            <span>Add Student</span>
           </button>
         </div>
       </div>
 
+      {/* Error Alert */}
       {error && (
-        <div className="mt-4 bg-red-50 border-l-4 border-red-400 p-4">
-          <div className="flex">
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 shadow-sm">
+          <div className="flex items-start space-x-3">
             <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-red-700">{error}</p>
-            </div>
-            <div className="ml-auto pl-3">
-              <div className="-mx-1.5 -my-1.5">
-                <button
-                  onClick={() => setError(null)}
-                  className="inline-flex rounded-md bg-red-50 p-1.5 text-red-500 hover:bg-red-100"
-                >
-                  <span className="sr-only">Dismiss</span>
-                  <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </svg>
-                </button>
+              <div className="p-1.5 rounded-lg bg-red-100">
+                <svg className="h-4 w-4 text-red-600" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
               </div>
             </div>
+            <div className="flex-1">
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+            <button
+              onClick={() => setError(null)}
+              className="flex-shrink-0 p-1.5 rounded-lg text-red-500 hover:bg-red-100 transition-colors duration-200"
+            >
+              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
           </div>
         </div>
       )}
 
-      <DataTable
-        data={students}
-        columns={[
-          {
-            header: 'Name',
-            accessor: 'name',
-            sortable: true
-          },
-          {
-            header: 'Email',
-            accessor: 'email',
-            sortable: true
-          },
-          {
-            header: 'Section',
-            accessor: (student) => `${student.sections?.name || ''} (${student.sections?.program || ''})`,
-            filterable: true,
-            getFilterOptions: (data) => {
-              const sections = new Set<string>();
-              data.forEach(student => {
-                if (student.sections?.name) {
-                  sections.add(`${student.sections.name} (${student.sections.program})`);
+      {/* Data Table Section */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200/50 overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-200/50">
+          <h2 className="text-lg font-semibold text-slate-900">Student Records</h2>
+          <p className="text-slate-600 text-sm mt-1">
+            A comprehensive list of all students with their details and enrollment information
+          </p>
+        </div>
+        <div className="p-6">
+          <DataTable
+            data={students}
+            columns={[
+              {
+                header: 'Name',
+                accessor: 'name',
+                sortable: true
+              },
+              {
+                header: 'Email',
+                accessor: 'email',
+                sortable: true
+              },
+              {
+                header: 'Section',
+                accessor: (student) => `${student.sections?.name || ''} (${student.sections?.program || ''})`,
+                filterable: true,
+                getFilterOptions: (data) => {
+                  const sections = new Set<string>();
+                  data.forEach(student => {
+                    if (student.sections?.name) {
+                      sections.add(`${student.sections.name} (${student.sections.program})`);
+                    }
+                  });
+                  return Array.from(sections).sort();
                 }
-              });
-              return Array.from(sections).sort();
-            }
-          },
-          {
-            header: 'Course',
-            accessor: (student) => `${student.courses?.code || ''} - ${student.courses?.title || ''}`,
-            filterable: true,
-            getFilterOptions: (data) => {
-              const courses = new Set<string>();
-              data.forEach(student => {
-                if (student.courses?.code) {
-                  courses.add(`${student.courses.code} - ${student.courses.title}`);
+              },
+              {
+                header: 'Course',
+                accessor: (student) => `${student.courses?.code || ''} - ${student.courses?.title || ''}`,
+                filterable: true,
+                getFilterOptions: (data) => {
+                  const courses = new Set<string>();
+                  data.forEach(student => {
+                    if (student.courses?.code) {
+                      courses.add(`${student.courses.code} - ${student.courses.title}`);
+                    }
+                  });
+                  return Array.from(courses).sort();
                 }
-              });
-              return Array.from(courses).sort();
-            }
-          },
-          {
-            header: 'Year Level',
-            accessor: 'year_level',
-            sortable: true,
-            filterable: true,
-            getFilterOptions: (data) => {
-              const yearLevels = new Set<string>();
-              data.forEach(student => {
-                if (student.year_level) {
-                  yearLevels.add(String(student.year_level));
+              },
+              {
+                header: 'Year Level',
+                accessor: 'year_level',
+                sortable: true,
+                filterable: true,
+                getFilterOptions: (data) => {
+                  const yearLevels = new Set<string>();
+                  data.forEach(student => {
+                    if (student.year_level) {
+                      yearLevels.add(String(student.year_level));
+                    }
+                  });
+                  return Array.from(yearLevels).sort((a, b) => Number(a) - Number(b));
                 }
-              });
-              return Array.from(yearLevels).sort((a, b) => Number(a) - Number(b));
-            }
-          }
-        ]}
-        searchFields={['name', 'email']}
-        onDelete={handleDelete}
-        onEdit={handleEdit}
-        isLoading={loading}
-      />
+              }
+            ]}
+            searchFields={['name', 'email']}
+            onDelete={handleDelete}
+            onEdit={handleEdit}
+            isLoading={loading}
+          />
+        </div>
+      </div>
 
+      {/* Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={handleModalClose}

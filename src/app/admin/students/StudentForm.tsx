@@ -17,7 +17,7 @@ export default function StudentForm({ studentId, onSuccess, onCancel }: StudentF
   const [initialLoading, setInitialLoading] = useState(true);
   const [sections, setSections] = useState<any[]>([]);
   const [courses, setCourses] = useState<any[]>([]);
-  
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -105,9 +105,9 @@ export default function StudentForm({ studentId, onSuccess, onCancel }: StudentF
         }
 
         // If student has attendance records and trying to change section or course
-        if (attendanceRecords?.length > 0 && 
-            (currentStudent?.section_id !== formData.section_id || 
-             currentStudent?.course_id !== formData.course_id)) {
+        if (attendanceRecords?.length > 0 &&
+          (currentStudent?.section_id !== formData.section_id ||
+            currentStudent?.course_id !== formData.course_id)) {
           setError('Cannot change section or course for a student with existing attendance records.');
           return;
         }

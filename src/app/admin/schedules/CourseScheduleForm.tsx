@@ -32,7 +32,7 @@ export default function CourseScheduleForm({ scheduleId, onSuccess, onCancel }: 
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [courses, setCourses] = useState<any[]>([]);
   const [sections, setSections] = useState<any[]>([]);
   const [rooms, setRooms] = useState<any[]>([]);
