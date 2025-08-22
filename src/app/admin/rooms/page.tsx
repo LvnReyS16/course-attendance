@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/lib/database.types";
 import DataTable from "@/components/DataTable";
+import Modal from "@/components/Modal";
+import RoomForm from "@/components/RoomForm";
 import { MdAdd, MdMeetingRoom } from "react-icons/md";
 
 type Room = Database["public"]["Tables"]["rooms"]["Row"];
@@ -11,6 +13,8 @@ type Room = Database["public"]["Tables"]["rooms"]["Row"];
 export default function RoomsPage() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const supabase = createClientComponentClient<Database>();
 
   useEffect(() => {
@@ -33,6 +37,43 @@ export default function RoomsPage() {
     }
   };
 
+  const handleAddRoom = () => {
+    setSelectedRoomId(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEditRoom = (id: string) => {
+    setSelectedRoomId(id);
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedRoomId(null);
+  };
+
+  const handleFormSuccess = () => {
+    fetchRooms();
+    handleModalClose();
+  };
+
+  const handleDeleteRoom = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('rooms')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      // Refresh the rooms list
+      fetchRooms();
+    } catch (error) {
+      console.error('Error deleting room:', error);
+      alert('Failed to delete room. Please try again.');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header Section */}
@@ -51,6 +92,7 @@ export default function RoomsPage() {
           </div>
           <button
             type="button"
+            onClick={handleAddRoom}
             className="inline-flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 hover:from-purple-600 hover:to-purple-700"
           >
             <MdAdd className="w-5 h-5" />
@@ -106,17 +148,24 @@ export default function RoomsPage() {
             ]}
             searchFields={["room_number", "room_type"]}
             isLoading={isLoading}
-            onEdit={(id) => {
-              // TODO: Implement edit functionality
-              console.log("Edit room:", id);
-            }}
-            onDelete={async (id) => {
-              // TODO: Implement delete functionality
-              console.log("Delete room:", id);
-            }}
+            onEdit={handleEditRoom}
+            onDelete={handleDeleteRoom}
           />
         </div>
       </div>
+
+      {/* Modal */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        title={selectedRoomId ? 'Edit Room' : 'Add New Room'}
+      >
+        <RoomForm
+          roomId={selectedRoomId || undefined}
+          onSuccess={handleFormSuccess}
+          onCancel={handleModalClose}
+        />
+      </Modal>
     </div>
   );
 }

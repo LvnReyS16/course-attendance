@@ -7,9 +7,16 @@ import { format } from 'date-fns';
 interface Section {
   id: string;
   name: string;
+  course_id: string;
   course: {
     code: string;
   };
+}
+
+interface Course {
+  id: string;
+  code: string;
+  title: string;
 }
 
 interface AttendanceRecord {
@@ -21,6 +28,10 @@ interface AttendanceRecord {
   section: {
     id: string;
     name: string;
+    course: {
+      id: string;
+      code: string;
+    };
   };
   timestamp: string;
   status: string;
@@ -28,31 +39,49 @@ interface AttendanceRecord {
 
 export default function AttendanceRecordsPage() {
   const [sections, setSections] = useState<Section[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [selectedSection, setSelectedSection] = useState<string>('');
+  const [selectedCourse, setSelectedCourse] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [loading, setLoading] = useState(true);
   const supabase = createClientComponentClient();
 
   useEffect(() => {
-    async function fetchSections() {
-      const { data } = await supabase
+    async function fetchData() {
+      // Fetch sections
+      const { data: sectionsData } = await supabase
         .from('sections')
         .select(`
           id,
           name,
+          course_id,
           course:courses (
             code
           )
         `);
 
-      if (data) {
-        setSections(data as unknown as Section[]);
+      if (sectionsData) {
+        setSections(sectionsData as unknown as Section[]);
       }
+
+      // Fetch courses
+      const { data: coursesData } = await supabase
+        .from('courses')
+        .select(`
+          id,
+          code,
+          title
+        `);
+
+      if (coursesData) {
+        setCourses(coursesData as unknown as Course[]);
+      }
+
       setLoading(false);
     }
 
-    fetchSections();
+    fetchData();
   }, [supabase]);
 
   useEffect(() => {
@@ -61,7 +90,7 @@ export default function AttendanceRecordsPage() {
       const startDate = new Date(`${selectedDate}T00:00:00`);
       const endDate = new Date(`${selectedDate}T23:59:59`);
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('attendance_records')
         .select(`
           id,
@@ -71,7 +100,11 @@ export default function AttendanceRecordsPage() {
           ),
           section:sections (
             id,
-            name
+            name,
+            course:courses (
+              id,
+              code
+            )
           ),
           timestamp,
           status
@@ -79,10 +112,21 @@ export default function AttendanceRecordsPage() {
         .gte('timestamp', startDate.toISOString())
         .lt('timestamp', endDate.toISOString());
 
+      // Filter by section if selected
+      if (selectedSection) {
+        query = query.eq('section_id', selectedSection);
+      }
+
+      // Note: Course filtering will be done client-side since we can't filter on nested relations easily
+
+      const { data, error } = await query;
+
       console.log('Query response:', { 
         data, 
         error, 
         selectedDate,
+        selectedSection,
+        selectedCourse,
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString()
       });
@@ -93,12 +137,21 @@ export default function AttendanceRecordsPage() {
       }
 
       if (data) {
-        setRecords(data as unknown as AttendanceRecord[]);
+        let filteredData = data as unknown as AttendanceRecord[];
+        
+        // Client-side filtering by course if selected
+        if (selectedCourse) {
+          filteredData = filteredData.filter(record => 
+            record.section && record.section.course && record.section.course.id === selectedCourse
+          );
+        }
+        
+        setRecords(filteredData);
       }
     }
 
     fetchAttendanceRecords();
-  }, [supabase, selectedSection, selectedDate]);
+  }, [supabase, selectedSection, selectedCourse, selectedDate]);
 
   async function handleDeleteRecord(recordId: string) {
     const { error } = await supabase
@@ -129,7 +182,28 @@ export default function AttendanceRecordsPage() {
         <h1 className="text-2xl font-bold text-gray-900 mb-8">Attendance Records</h1>
 
         <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Course
+              </label>
+              <select
+                value={selectedCourse}
+                onChange={(e) => {
+                  setSelectedCourse(e.target.value);
+                  setSelectedSection(''); // Clear section when course changes
+                }}
+                className="w-full p-2 border rounded-lg"
+              >
+                <option value="">All Courses</option>
+                {courses.map((course) => (
+                  <option key={course.id} value={course.id}>
+                    {course.code} - {course.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Select Section
@@ -140,11 +214,13 @@ export default function AttendanceRecordsPage() {
                 className="w-full p-2 border rounded-lg"
               >
                 <option value="">All Sections</option>
-                {sections.map((section) => (
-                  <option key={section.id} value={section.id}>
-                    {section.name} - {section.course.code}
-                  </option>
-                ))}
+                {sections
+                  .filter(section => !selectedCourse || section.course_id === selectedCourse)
+                  .map((section) => (
+                    <option key={section.id} value={section.id}>
+                      {section.name} - {section.course.code}
+                    </option>
+                  ))}
               </select>
             </div>
 
@@ -159,6 +235,45 @@ export default function AttendanceRecordsPage() {
                 className="w-full p-2 border rounded-lg"
               />
             </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6 mb-8">
+          <div className="flex items-center justify-between space-x-4">
+            <button
+              onClick={() => {
+                const currentDate = new Date(selectedDate);
+                currentDate.setDate(currentDate.getDate() - 1);
+                setSelectedDate(format(currentDate, 'yyyy-MM-dd'));
+              }}
+              className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
+              title="Previous day"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            
+            <div className="text-center">
+              <h2 className="text-lg font-semibold text-gray-900">
+                {format(new Date(selectedDate), 'EEEE, MMMM d, yyyy')}
+              </h2>
+            </div>
+            
+            <button
+              onClick={() => {
+                const currentDate = new Date(selectedDate);
+                currentDate.setDate(currentDate.getDate() + 1);
+                setSelectedDate(format(currentDate, 'yyyy-MM-dd'));
+              }}
+              disabled={selectedDate >= format(new Date(), 'yyyy-MM-dd')}
+              className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
+              title="Next day"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
           </div>
         </div>
 

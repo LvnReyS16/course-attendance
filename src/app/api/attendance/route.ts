@@ -9,7 +9,7 @@ const supabase = createClient(
 
 export async function POST(req: Request) {
   try {
-    const { sessionId, studentId, sectionId, courseId, timestamp } = await req.json();
+    const { sessionId, studentId, sectionId, courseId, timestamp, status } = await req.json();
 
     // Check for existing attendance record
     const { data: existingRecord } = await supabase
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
           section_id: sectionId,
           course_id: courseId,
           timestamp: timestamp,
-          status: 'present',
+          status: status,
           verification_method: 'qr'
         }
       ])

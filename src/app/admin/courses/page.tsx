@@ -5,6 +5,8 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/lib/database.types";
 import DataTable from "@/components/DataTable";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import Modal from "@/components/Modal";
+import CourseForm from "@/components/CourseForm";
 import { MdAdd, MdSchool } from "react-icons/md";
 
 type Course = Database["public"]["Tables"]["courses"]["Row"];
@@ -12,6 +14,8 @@ type Course = Database["public"]["Tables"]["courses"]["Row"];
 export default function CoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const supabase = createClientComponentClient<Database>();
 
   useEffect(() => {
@@ -34,6 +38,43 @@ export default function CoursesPage() {
     }
   };
 
+  const handleAddCourse = () => {
+    setSelectedCourseId(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEditCourse = (id: string) => {
+    setSelectedCourseId(id);
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedCourseId(null);
+  };
+
+  const handleFormSuccess = () => {
+    fetchCourses();
+    handleModalClose();
+  };
+
+  const handleDeleteCourse = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('courses')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      // Refresh the courses list
+      fetchCourses();
+    } catch (error) {
+      console.error('Error deleting course:', error);
+      alert('Failed to delete course. Please try again.');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header Section */}
@@ -52,6 +93,7 @@ export default function CoursesPage() {
           </div>
           <button
             type="button"
+            onClick={handleAddCourse}
             className="inline-flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 hover:from-green-600 hover:to-green-700"
           >
             <MdAdd className="w-5 h-5" />
@@ -127,17 +169,24 @@ export default function CoursesPage() {
             ]}
             searchFields={["code", "title"]}
             isLoading={isLoading}
-            onEdit={(id) => {
-              // TODO: Implement edit functionality
-              console.log("Edit course:", id);
-            }}
-            onDelete={async (id) => {
-              // TODO: Implement delete functionality
-              console.log("Delete course:", id);
-            }}
+            onEdit={handleEditCourse}
+            onDelete={handleDeleteCourse}
           />
         </div>
       </div>
+
+      {/* Modal */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        title={selectedCourseId ? 'Edit Course' : 'Add New Course'}
+      >
+        <CourseForm
+          courseId={selectedCourseId || undefined}
+          onSuccess={handleFormSuccess}
+          onCancel={handleModalClose}
+        />
+      </Modal>
     </div>
   );
 }

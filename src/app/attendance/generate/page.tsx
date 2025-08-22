@@ -23,7 +23,7 @@ const checkAndUpdateSessionStatus = async (supabase: SupabaseClient, sessionId: 
     .eq('id', sessionId)
     .single();
 
-  if (session && new Date(session.expires_at) < new Date() && session.status === 'active') {
+  if (session && moment(session.expires_at, 'YYYY-MM-DD HH:mm:ss').toDate() < new Date() && session.status === 'active') {
     // Update session status to expired
     await supabase
       .from('attendance_sessions')
@@ -49,15 +49,46 @@ export default function GenerateQRPage() {
     
     setIsGenerating(true);
     try {
-      const expiresAt = moment().add(3, 'hours').toISOString();
-
       const section = sections.find(s => s.name === selectedSection);
+      const today = moment().format('YYYY-MM-DD');
+      
+      // First, check if there's an existing active session for this date, section, and course
+      const { data: existingSession, error: fetchError } = await supabase
+        .from('attendance_sessions')
+        .select('id, expires_at, status')
+        .eq('section_id', section?.id)
+        .eq('course_id', section?.course_id)
+        .eq('date', today)
+        .eq('status', 'active')
+        .single();
+
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        // PGRST116 is "no rows returned" - other errors are actual problems
+        setError('Failed to check existing sessions');
+        console.error('Error checking existing sessions:', fetchError);
+        return;
+      }
+
+      // If we found an existing session, check if it's still valid
+      if (existingSession) {
+        const isStillActive = await checkAndUpdateSessionStatus(supabase, existingSession.id);
+        if (isStillActive) {
+          // Use the existing session
+          setSessionId(existingSession.id);
+          setError('');
+          return;
+        }
+      }
+
+      // No existing active session found, create a new one
+      const expiresAt = moment().add(3, 'hours').format('YYYY-MM-DD HH:mm:ss');
       
       const sessionData = {
         section_id: section?.id,
         course_id: section?.course_id,
-        date: moment().format('YYYY-MM-DD'),
+        date: today,
         expires_at: expiresAt,
+        created_at: moment().format('YYYY-MM-DD HH:mm:ss'),
         status: 'active'
       };
 
@@ -146,7 +177,11 @@ export default function GenerateQRPage() {
           ) : (
             <select
               value={selectedSection}
-              onChange={(e) => setSelectedSection(e.target.value)}
+              onChange={(e) => {
+                setSelectedSection(e.target.value);
+                setSessionId(''); // Clear session when section changes
+                setError(''); // Clear any errors
+              }}
               className="w-full p-2 border rounded-lg"
             >
               <option value="">Select a section...</option>
@@ -170,7 +205,7 @@ export default function GenerateQRPage() {
           disabled={!selectedSection || isGenerating}
           className="w-full mb-8 py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
         >
-          {isGenerating ? 'Generating...' : 'Generate New Session'}
+          {isGenerating ? 'Loading...' : 'Generate/Show QR Code'}
         </button>
 
         {sessionId && (

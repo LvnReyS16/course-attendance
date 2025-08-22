@@ -73,7 +73,7 @@ export default function SectionAttendancePage() {
         return;
       }
 
-      const isExpired = new Date(sessionData.expires_at) < new Date();
+      const isExpired = moment(sessionData.expires_at, 'YYYY-MM-DD HH:mm:ss').toDate() < new Date();
       if (isExpired && sessionData.status === 'active') {
         await supabase
           .from('attendance_sessions')
@@ -171,9 +171,8 @@ export default function SectionAttendancePage() {
               try {
                 setIsSubmitting(true);
                 const currentTime = moment();
-                const sessionTime = moment(sessionCreatedAt);
+                const sessionTime = moment(sessionCreatedAt, 'YYYY-MM-DD HH:mm:ss');
                 const timeDiff = currentTime.diff(sessionTime, 'minutes');
-                
                 const status = timeDiff <= 15 ? 'present' : 'late';
 
                 const response = await fetch('/api/attendance', {

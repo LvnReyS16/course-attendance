@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/lib/database.types";
 import DataTable from "@/components/DataTable";
+import Modal from "@/components/Modal";
+import SectionForm from "@/components/SectionForm";
 import { MdAdd, MdCategory } from "react-icons/md";
 
 type Section = Database["public"]["Tables"]["sections"]["Row"] & {
@@ -16,6 +18,8 @@ type Section = Database["public"]["Tables"]["sections"]["Row"] & {
 export default function SectionsPage() {
   const [sections, setSections] = useState<Section[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
   const supabase = createClientComponentClient<Database>();
 
   useEffect(() => {
@@ -46,6 +50,43 @@ export default function SectionsPage() {
     }
   };
 
+  const handleAddSection = () => {
+    setSelectedSectionId(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEditSection = (id: string) => {
+    setSelectedSectionId(id);
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedSectionId(null);
+  };
+
+  const handleFormSuccess = () => {
+    fetchSections();
+    handleModalClose();
+  };
+
+  const handleDeleteSection = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('sections')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      // Refresh the sections list
+      fetchSections();
+    } catch (error) {
+      console.error('Error deleting section:', error);
+      alert('Failed to delete section. Please try again.');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header Section */}
@@ -64,6 +105,7 @@ export default function SectionsPage() {
           </div>
           <button
             type="button"
+            onClick={handleAddSection}
             className="inline-flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 hover:from-orange-600 hover:to-orange-700"
           >
             <MdAdd className="w-5 h-5" />
@@ -125,17 +167,24 @@ export default function SectionsPage() {
             ]}
             searchFields={["name", "program"]}
             isLoading={isLoading}
-            onEdit={(id) => {
-              // TODO: Implement edit functionality
-              console.log("Edit section:", id);
-            }}
-            onDelete={async (id) => {
-              // TODO: Implement delete functionality
-              console.log("Delete section:", id);
-            }}
+            onEdit={handleEditSection}
+            onDelete={handleDeleteSection}
           />
         </div>
       </div>
+
+      {/* Modal */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        title={selectedSectionId ? 'Edit Section' : 'Add New Section'}
+      >
+        <SectionForm
+          sectionId={selectedSectionId || undefined}
+          onSuccess={handleFormSuccess}
+          onCancel={handleModalClose}
+        />
+      </Modal>
     </div>
   );
 }
