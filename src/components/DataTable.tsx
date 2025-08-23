@@ -164,7 +164,7 @@ export default function DataTable<T extends { id: string }>({
   return (
     <div>
       {/* Table header with search and filters */}
-      <div className="bg-white py-3 border-b border-gray-200 sm:rounded-t-lg">
+      <div className="bg-white pt-2 pb-4 border-b border-gray-200 sm:rounded-t-lg">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex items-start gap-2">
             {/* Search input */}
@@ -256,7 +256,7 @@ export default function DataTable<T extends { id: string }>({
                     <th
                       key={String(column.accessor)}
                       scope="col"
-                      className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                      className="px-3 py-3 text-left text-sm font-semibold text-gray-900"
                     >
                       <div className="group inline-flex items-center">
                         {column.header}
@@ -319,7 +319,7 @@ export default function DataTable<T extends { id: string }>({
                       {columns.map((column) => (
                         <td
                           key={String(column.accessor)}
-                          className="px-3 py-4 text-sm text-gray-500"
+                          className="px-3 py-1.5 text-sm text-gray-500"
                         >
                           {typeof column.accessor === "function"
                             ? column.accessor(item)
@@ -327,25 +327,25 @@ export default function DataTable<T extends { id: string }>({
                         </td>
                       ))}
                       {showActions && (
-                        <td className="relative py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                        <td className="relative py-2 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                           <div className="flex items-center justify-end space-x-2">
                             {onEdit && (
                               <button
                                 onClick={() => onEdit(item.id)}
-                                className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 bg-slate-50 rounded-lg hover:bg-slate-100 hover:text-slate-800 transition-all duration-200 border border-slate-200 hover:border-slate-300"
+                                className="inline-flex items-center px-3 py-2 text-xs font-medium text-slate-600 bg-slate-50 rounded-lg hover:bg-slate-100 hover:text-slate-800 transition-all duration-200 border border-slate-200 hover:border-slate-300"
                                 title="Edit"
                               >
-                                <FiEdit3 className="w-4 h-4 mr-1.5" />
+                                <FiEdit3 className="w-3 h-3 mr-1.5" />
                                 Edit
                               </button>
                             )}
                             {onDelete && (
                               <button
                                 onClick={() => handleDelete(item.id)}
-                                className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 bg-slate-50 rounded-lg hover:bg-slate-100 hover:text-slate-800 transition-all duration-200 border border-slate-200 hover:border-slate-300"
+                                className="inline-flex items-center px-3 py-2 text-xs font-medium text-slate-600 bg-slate-50 rounded-lg hover:bg-slate-100 hover:text-slate-800 transition-all duration-200 border border-slate-200 hover:border-slate-300"
                                 title="Delete"
                               >
-                                <FiTrash2 className="w-4 h-4 mr-1.5" />
+                                <FiTrash2 className="w-3 h-3 mr-1.5" />
                                 Delete
                               </button>
                             )}

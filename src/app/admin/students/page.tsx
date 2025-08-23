@@ -116,9 +116,9 @@ export default function StudentsPage() {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Header Section */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200/50 p-6">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200/50 p-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center space-x-4 mb-4 sm:mb-0">
             <div className="p-3 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-sm">
@@ -176,7 +176,7 @@ export default function StudentsPage() {
             A comprehensive list of all students with their details and enrollment information
           </p>
         </div>
-        <div className="p-6">
+        <div className="px-5 py-2 whitespace-nowrap">
           <DataTable
             data={students}
             columns={[
