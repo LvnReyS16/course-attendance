@@ -113,8 +113,10 @@ export default function DataTable<T extends { id: string }>({
           bValue = b[sortConfig.field];
         }
         
-        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+        const safeA = aValue ?? '';
+        const safeB = bValue ?? '';
+        if (safeA < safeB) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (safeA > safeB) return sortConfig.direction === 'asc' ? 1 : -1;
         return 0;
       });
     }
