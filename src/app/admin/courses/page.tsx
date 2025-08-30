@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/lib/database.types";
 import DataTable from "@/components/DataTable";
-import LoadingSpinner from "@/components/LoadingSpinner";
 import Modal from "@/components/Modal";
 import CourseForm from "@/components/CourseForm";
 import { MdAdd, MdSchool } from "react-icons/md";

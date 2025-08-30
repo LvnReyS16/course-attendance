@@ -8,7 +8,6 @@ import {
   MdCategory,
   MdAdd,
   MdSchedule,
-  MdDashboard,
 } from "react-icons/md";
 
 export default async function AdminDashboard() {
