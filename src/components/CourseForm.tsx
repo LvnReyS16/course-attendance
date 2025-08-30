@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/lib/database.types';
 
-type Course = Database['public']['Tables']['courses']['Row'];
 
 interface CourseFormProps {
   courseId?: string;
@@ -35,7 +34,7 @@ export default function CourseForm({ courseId, onSuccess, onCancel }: CourseForm
       const { data, error } = await supabase
         .from('courses')
         .select('*')
-        .eq('id', courseId)
+        .eq('id', courseId || "")
         .single();
 
       if (error) throw error;

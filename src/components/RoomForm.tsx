@@ -4,8 +4,6 @@ import { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/lib/database.types';
 
-type Room = Database['public']['Tables']['rooms']['Row'];
-
 interface RoomFormProps {
   roomId?: string;
   onSuccess: () => void;

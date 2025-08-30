@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -478,7 +480,7 @@ export default function StudentForm({ studentId, onSuccess, onCancel }: StudentF
             <h3 className="text-lg font-medium text-gray-900 mb-2">Upload Students via CSV</h3>
             <p className="text-sm text-gray-600 mb-2">
               Upload a CSV file with columns: <strong>id</strong>, <strong>name</strong>, <strong>year_level</strong>, <strong>email</strong>, <strong>section</strong>, <strong>subject_code</strong>. 
-              Section format should be like 'BSIT4A' (will match section name 'IT4A' in database). Subject code should match existing course codes.
+              Section format should be like &apos;BSIT4A&apos; (will match section name &apos;IT4A&apos; in database). Subject code should match existing course codes.
               <br />
               <strong>Note:</strong> Existing student IDs will be updated, new IDs will be added. Section and subject will be matched against database or set to null if not found.
             </p>

@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/lib/database.types';
 
-type Section = Database['public']['Tables']['sections']['Row'];
 type Course = Database['public']['Tables']['courses']['Row'];
 
 interface SectionFormProps {
